@@ -78,6 +78,14 @@ public:
 
     // Send configuration to the device, saving the new config if successful.
     // This is normally called automatically when using set_config or modify_config
+    // Note that writing to the configuration register restarts any conversion
+    // that may already be in progress. (See the datasheet, section 8.4.2.2)
+
+    // In my testing, it seems necessary to leave a bit of time for changes to
+    // the configuration to take effect; even just the time it takes to read
+    // the status register seems enough. If no time is left before reading and
+    // immediately changing the configuration again, e.g. when scanning four
+    // single ended inputs, the reading seems to get stuck
     bool write_config(Config newconf);
 
     // Apply fields to the default configuration and send to device.

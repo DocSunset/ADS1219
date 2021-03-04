@@ -55,13 +55,18 @@ namespace ADS1219 {
     // On boot or reset, the config register is set to all zeros
     enum class MUX : uint8_t
     {
+        // differential inputs, 
+        // AIN positive is the first channel, AIN negative is the second
         AIN0_AIN1   = 0,
         AIN2_AIN3   = 0b00100000,
         AIN1_AIN2   = 0b01000000,
+        // single channel inputs,
+        // AIN positive is the stated channel, AIN negative is connected to AGND
         AIN0        = 0b01100000,
         AIN1        = 0b10000000,
         AIN2        = 0b10100000,
         AIN3        = 0b11000000,
+        // both AIN positive and AIN negative shorted to AVDD/2
         HALF_AVDD   = 0b11100000,
         MASK        = 0b00011111
     };
@@ -109,8 +114,11 @@ namespace ADS1219 {
     constexpr Config apply(Config c, Field f, Fields... fields)
     {
         return Config{ static_cast<uint8_t>(
-                  (static_cast<uint8_t>(f) & ~static_cast<uint8_t>(Field::MASK)) 
-                | (static_cast<uint8_t>(Field::MASK) & apply(c, fields...)._byte))};
+                  // the bits of Field f, masked so that bits outside the Field are zero
+                  (static_cast<uint8_t>(f) & ~static_cast<uint8_t>(Field::MASK))
+                | // combined with the config masked so that the Field part is zero
+                  (static_cast<uint8_t>(Field::MASK) & apply(c, fields...)._byte)
+        )};
     }
 
     template<typename... Fields> 
