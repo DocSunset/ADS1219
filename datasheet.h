@@ -1,5 +1,5 @@
 #pragma once
-#include <cinttypes>
+#include <inttypes.h>
 
 namespace ADS1219 {
     // Table 10. I2C Address Truth Table
@@ -71,7 +71,7 @@ namespace ADS1219 {
         FOUR        = 0b00010000,
         MASK        = 0b11101111
     };
-    enum class DATA_RATE : uint8_t
+    enum class RATE : uint8_t
     {
         SPS20       = 0,
         SPS90       = 0b00000100,
@@ -79,13 +79,13 @@ namespace ADS1219 {
         SPS1000     = 0b00001100,
         MASK        = 0b11110011
     };
-    enum class CONVERSION_MODE : uint8_t
+    enum class MODE : uint8_t
     {
         SINGLE_SHOT = 0,
         CONTINUOUS  = 0b00000010,
         MASK        = 0b11111101
     };
-    enum class VREF_SELECTION : uint8_t
+    enum class VREF : uint8_t
     {
         INTERN      = 0,
         EXTERN      = 0b00000001,
@@ -108,13 +108,9 @@ namespace ADS1219 {
     template<typename Field, typename... Fields>
     constexpr Config apply(Config c, Field f, Fields... fields)
     {
-        return Config{ static_cast<uint8_t> 
-                         ( static_cast<uint8_t>(f) 
-                         | ( static_cast<uint8_t>(Field::MASK) 
-                           & apply(c, fields...)._byte
-                           )
-                         )
-                     };
+        return Config{ static_cast<uint8_t>(
+                  (static_cast<uint8_t>(f) & ~static_cast<uint8_t>(Field::MASK)) 
+                | (static_cast<uint8_t>(Field::MASK) & apply(c, fields...)._byte))};
     }
 
     template<typename... Fields> 
@@ -123,5 +119,6 @@ namespace ADS1219 {
         return apply(Config{}, fields...);
     };
 
+    constexpr int MAX_CODE = 0x7fffff;
 
 }

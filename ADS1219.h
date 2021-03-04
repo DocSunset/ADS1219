@@ -1,25 +1,25 @@
 #pragma once
-#include <cinttypes>
+#include <inttypes.h>
 #include <Wire.h>
 #include "datasheet.h"
 
 namespace ADS1219 {
-class ADC
+class ADS1219_ADC
 {
 public:
     // The ADC must be initialized with an address and an I2C bus
-    ADC(const Address& address, TwoWire& wire) 
-        : _address{address._byte}, _bus{wire}, _config{0} {}
+    ADS1219_ADC(const Address& address, TwoWire& wire) 
+        : _address{address._byte}, _bus(wire), _config{0} {}
 
     // Send a command to the device. Normally this is not used directly.
-    bool command(COMMAND cmd);
+    bool command(COMMAND cmd, bool send_stop = true);
 
     // Send the reset command to the device; 
     // equivalent to toggling the device's reset pin or power cycling the device.
     bool reset()            { return command(RESET); }
 
     // Send the STARTSYNC command to the device.
-    // This will a single shot conversion or start continuous conversion, 
+    // This will start a single shot conversion or start continuous conversion, 
     // depending on the current conversion mode configuration. 
     // Note that any ongoing conversion will be restarted.
     bool start_conversion() { return command(STARTSYNC); }
@@ -64,7 +64,7 @@ public:
     bool read_raw(int& out);
 
     // Normalize a raw reading to the interval [-1 1] floating point
-    float normalize(const int& raw) const {return (float)raw / (float)(0x7fffff);}
+    float normalize(const int& raw) const {return (float)raw / (float)(MAX_CODE);}
 
     // Calls read_raw() and normalizes the result to a float in the interval [-1, 1]
     // Returns true if the read was successful.
@@ -76,13 +76,11 @@ public:
         return true;
     }
 
-    // Send the current configuration stored in memory to the device.
+    // Send configuration to the device, saving the new config if successful.
     // This is normally called automatically when using set_config or modify_config
     bool write_config(Config newconf);
 
     // Apply fields to the default configuration and send to device.
-    // Note that if multiple values are given for one field, 
-    // only the first will be applied.
     template<typename... Fields>
     bool set_config(Fields... fields) 
     { 
@@ -90,10 +88,8 @@ public:
     }
 
     // Apply fields to the current configuration and send to device.
-    // Note that if multiple values are given for one field, 
-    // only the first will be applied
     template<typename... Fields>
-    void modify_config(Fields... fields) 
+    bool modify_config(Fields... fields) 
     { 
         return write_config(apply(_config, fields...));
     }
